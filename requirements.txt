@@ -1,6 +1,0 @@
-streamlit
-pandas
-numpy
-plotly
-altair
-# Version 1.1
