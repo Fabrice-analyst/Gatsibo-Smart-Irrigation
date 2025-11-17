@@ -4,16 +4,16 @@ import plotly.express as px
 import requests
 import os
 
-# === FIX: Use absolute path for Streamlit Cloud ===
+# === FIX: Use absolute path for Streamlit Cloud (Linux) ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# === LOAD HISTORICAL DATA (YOUR ORIGINAL) ===
+# === LOAD HISTORICAL DATA (FIXED) ===
 @st.cache_data(ttl=3600)
 def load_historical_data():
     file_path = os.path.join(BASE_DIR, 'gatsibo_historical_data.csv')
     return pd.read_csv(file_path, parse_dates=['date'])
 
-# === LIVE OPEN-METEO API (ADDED) ===
+# === LIVE OPEN-METEO API + FALLBACK (FIXED) ===
 @st.cache_data(ttl=3600)
 def get_openmeteo_forecast():
     url = "https://api.open-meteo.com/v1/forecast"
@@ -41,9 +41,11 @@ def get_openmeteo_forecast():
         backup_path = os.path.join(BASE_DIR, 'irrigation_forecast_7days.csv')
         return pd.read_csv(backup_path, parse_dates=['date'])
 
-# === YOUR ORIGINAL CODE STARTS HERE (UNCHANGED) ===
-data, forecast_7day = load_historical_data(), get_openmeteo_forecast()
+# === LOAD DATA ===
+data = load_historical_data()
+forecast_7day = get_openmeteo_forecast()
 
+# === YOUR ORIGINAL UI (100% UNCHANGED) ===
 st.title("Gatsibo Smart Irrigation Scheduler")
 st.markdown("### Live 7-Day Irrigation Forecast (Real-Time ET₀ & Rainfall)")
 
@@ -75,7 +77,7 @@ st.plotly_chart(fig, use_container_width=True)
 st.subheader("Historical ET₀ & Rainfall (2019–2025)")
 monthly = data.resample('M', on='date').mean()
 fig2 = px.line(monthly, x=monthly.index, y=['et0_mm', 'rainfall_mm'],
-               labels={'value': 'mm', 'date: 'Month'},
+               labels={'value': 'mm', 'date': 'Month'},
                color_discrete_map={'et0_mm': '#f39c12', 'rainfall_mm': '#3498db'})
 fig2.update_xaxes(tickformat='%b %Y')
 st.plotly_chart(fig2, use_container_width=True)
