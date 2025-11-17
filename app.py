@@ -2,18 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import requests
-import os
 
-# === FIX: Use absolute path for Streamlit Cloud (Linux) ===
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# === LOAD HISTORICAL DATA (FIXED) ===
-@st.cache_data(ttl=3600)
-def load_historical_data():
-    file_path = os.path.join(BASE_DIR, 'gatsibo_historical_data.csv')
-    return pd.read_csv(file_path, parse_dates=['date'])
-
-# === LIVE OPEN-METEO API + FALLBACK (FIXED) ===
+# === LIVE OPEN-METEO API ONLY (NO CSV) ===
 @st.cache_data(ttl=3600)
 def get_openmeteo_forecast():
     url = "https://api.open-meteo.com/v1/forecast"
@@ -37,15 +27,20 @@ def get_openmeteo_forecast():
         st.success("Live Forecast from Open-Meteo API (FAO-56 ET₀)")
         return df
     except Exception as e:
-        st.warning(f"API failed ({e}) — using backup CSV")
-        backup_path = os.path.join(BASE_DIR, 'irrigation_forecast_7days.csv')
-        return pd.read_csv(backup_path, parse_dates=['date'])
+        st.error(f"API failed: {e}. Using demo data.")
+        # Fallback demo data (no file needed)
+        return pd.DataFrame({
+            'date': pd.date_range(start='2025-11-17', periods=7),
+            'temp_max': [28.5, 29.1, 27.8, 30.2, 28.9, 29.5, 28.0],
+            'rainfall_mm': [0.0, 2.1, 5.3, 0.0, 1.2, 0.0, 3.4],
+            'et0_mm': [4.2, 4.5, 4.0, 4.8, 4.3, 4.6, 4.1],
+            'irrigation_mm': [3.4, 1.5, 0.0, 3.8, 2.2, 3.7, 0.0]
+        })
 
-# === LOAD DATA ===
-data = load_historical_data()
+# === LOAD FORECAST ===
 forecast_7day = get_openmeteo_forecast()
 
-# === YOUR ORIGINAL UI (100% UNCHANGED) ===
+# === UI (YOUR ORIGINAL STYLE) ===
 st.title("Gatsibo Smart Irrigation Scheduler")
 st.markdown("### Live 7-Day Irrigation Forecast (Real-Time ET₀ & Rainfall)")
 
@@ -53,10 +48,10 @@ col1, col2 = st.columns([1, 1])
 
 with col1:
     st.subheader("7-Day Forecast")
-    forecast_display = forecast_7day[['date', 'temp_max', 'rainfall_mm', 'et0_mm', 'irrigation_mm']].copy()
-    forecast_display['date'] = forecast_display['date'].dt.strftime('%b %d')
-    forecast_display = forecast_display.round(1)
-    st.dataframe(forecast_display.style.highlight_min(axis=0, subset=['irrigation_mm'], color='#ffcccc'))
+    display = forecast_7day[['date', 'temp_max', 'rainfall_mm', 'et0_mm', 'irrigation_mm']].copy()
+    display['date'] = display['date'].dt.strftime('%b %d')
+    display = display.round(1)
+    st.dataframe(display.style.highlight_min(axis=0, subset=['irrigation_mm'], color='#ffcccc'))
 
 with col2:
     st.subheader("Summary")
@@ -68,20 +63,10 @@ with col2:
 
 st.subheader("Irrigation vs Rainfall")
 fig = px.bar(forecast_7day, x='date', y=['irrigation_mm', 'rainfall_mm'],
-             labels={'value': 'mm', 'date': 'Date'},
-             color_discrete_map={'irrigation_mm': '#ff6b6b', 'rainfall_mm': '#4ecdc4'},
-             barmode='group')
+             barmode='group', color_discrete_map={'irrigation_mm': '#ff6b6b', 'rainfall_mm': '#4ecdc4'})
 fig.update_xaxes(tickformat='%b %d')
 st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("Historical ET₀ & Rainfall (2019–2025)")
-monthly = data.resample('M', on='date').mean()
-fig2 = px.line(monthly, x=monthly.index, y=['et0_mm', 'rainfall_mm'],
-               labels={'value': 'mm', 'date': 'Month'},
-               color_discrete_map={'et0_mm': '#f39c12', 'rainfall_mm': '#3498db'})
-fig2.update_xaxes(tickformat='%b %Y')
-st.plotly_chart(fig2, use_container_width=True)
-
 st.markdown("---")
 st.markdown("**Fabrice Rutagarama** | [GitHub](https://github.com/Fabrice-analyst) | [Live App](https://gatsibo-smart-irrigation.streamlit.app)")
-st.caption("Data: Open-Meteo API (FAO-56) | Auto-updates hourly | No notebook. No CSV. No manual work.")
+st.caption("Data: Open-Meteo API (FAO-56) | Auto-updates hourly | No CSV. No notebook.")
