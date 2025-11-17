@@ -54,13 +54,14 @@ def get_live_forecast(lat=LAT, lon=LON, timezone=TIMEZONE, days=7):
     }
     r = requests.get(url, params=params, timeout=20)
     r.raise_for_status()
-    data = r.json()["daily"]
+    data = r.json().get("daily", {})
     df = pd.DataFrame({
-        "date": pd.to_datetime(data["time"]),
-        "temp_max": data["temperature_2m_max"],
-        "rainfall_mm": data["precipitation_sum"],
-        "et0_mm": data["et0_fao_evapotranspiration"]
+        "date": pd.to_datetime(data.get("time", [])),
+        "temp_max": data.get("temperature_2m_max", []),
+        "rainfall_mm": data.get("precipitation_sum", []),
+        "et0_mm": data.get("et0_fao_evapotranspiration", [])
     })
+    # If remote returned empty or short data, fall back to demo handling by caller
     return df
 
 def safe_get_forecast(force_refresh=False):
@@ -68,9 +69,21 @@ def safe_get_forecast(force_refresh=False):
     Wrapper to optionally force refresh cache.
     """
     if force_refresh:
-        st.cache_data.clear()
+        try:
+            # clear cache for the get_live_forecast function
+            get_live_forecast.clear()
+        except Exception:
+            # fallback: attempt to clear global cache if API changed
+            try:
+                st.cache_data.clear()
+            except Exception:
+                pass
+
     try:
         df = get_live_forecast()
+        # If API returned empty, raise to trigger fallback
+        if df is None or df.empty:
+            raise ValueError("Empty forecast returned")
     except Exception as e:
         st.warning("Live forecast fetch failed — using demo data. Error: " + str(e))
         today = pd.to_datetime(datetime.now().date())
@@ -125,14 +138,32 @@ def compute_weekly_irrigation(forecast_df, crop, stage, soil_type, efficiency):
 
 def split_irrigation(total_mm, area_ha, n_splits=2, dmax_event_mm=25, pump_rate_m3h=None):
     """
-    Split weekly gross irrigation (mm) into n events (1..3).
+    Split weekly gross irrigation (mm) into n events (1..n_splits).
     Returns a list of events with depth_mm, volume_m3 and duration_hr (if pump_rate_m3h given).
+    This function is now defensive: if total_mm <= 0 or n_splits <= 0 it returns [].
     """
+    # Defensive guards
+    if total_mm is None:
+        return []
+    try:
+        total_mm = float(total_mm)
+    except Exception:
+        return []
+
+    # No irrigation needed
+    if total_mm <= 0 or n_splits <= 0:
+        return []
+
+    # Ensure sensible dmax_event_mm
+    if dmax_event_mm is None or dmax_event_mm <= 0:
+        dmax_event_mm = 25.0
+
     # Decide minimal splits needed by dmax_event_mm
     n_min = int(np.ceil(total_mm / dmax_event_mm)) if dmax_event_mm > 0 else 1
-    n = min(max(1, n_min), n_splits)
+    # ensure at least 1 and at most n_splits
+    n = min(max(1, n_min), max(1, int(n_splits)))
     per_event_mm = total_mm / n
-    area_m2 = area_ha * 10000.0
+    area_m2 = max(0.0001, float(area_ha)) * 10000.0  # avoid zero area
     per_event_m3 = per_event_mm / 1000.0 * area_m2
     events = []
     for i in range(n):
@@ -231,8 +262,8 @@ if page == "Dashboard":
     # Uncertainty band
     band = uncertainty_band_weekly(forecast, crop, stage, soil, efficiency)
 
-    # split into events
-    n_splits = 2 if weekly_mm > 0 else 0
+    # split into events: ensure sensible default n_splits (never zero)
+    n_splits = 2
     if weekly_mm > 40:
         n_splits = 3
     events = split_irrigation(weekly_mm, area_ha, n_splits=n_splits, dmax_event_mm=max_event_depth, pump_rate_m3h=pump_rate)
@@ -278,8 +309,9 @@ if page == "Dashboard":
         viz_df["eff_rain_mm"] = viz_df["rainfall_mm"].apply(lambda x: effective_rainfall(x, soil))
         viz_df_plot = viz_df.melt(id_vars=["date"], value_vars=["ETc_mm", "rainfall_mm", "eff_rain_mm"],
                                   var_name="variable", value_name="value")
+        # Use default palette (do not hard-code colors) — Plotly will pick colors
         fig = px.bar(viz_df, x="date", y=["eff_rain_mm", "ETc_mm"], barmode="group",
-                     labels={"value":"mm","date":"Date"}, color_discrete_map={"eff_rain_mm":"#4ecdc4","ETc_mm":"#ff6b6b"})
+                     labels={"value":"mm","date":"Date"})
         fig.update_layout(showlegend=True, legend_title_text="")
         st.plotly_chart(fig, use_container_width=True)
 
