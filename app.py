@@ -397,13 +397,31 @@ elif page == "About Gatsibo":
 
 elif page == "About This Tool":
     st.header("About This Tool")
+    
+    # Keep your current short description
     st.markdown("""
     - **Built with**: Streamlit, Open-Meteo API, Plotly, Pandas  
     - **ET₀ Model**: FAO-56 ET₀ from Open-Meteo (computed remotely)  
     - **Irrigation Logic**: ETc (ET₀ × Kc) → subtract effective rain → divide by efficiency  
     - **Update frequency**: Daily (cached) — use 'Re-run forecast now' for ad-hoc refresh  
     """)
-    st.markdown("Contact: rutagaramafabrice7@gmail.com  •  +250 781 587 469")
+    
+    # ADD ONLY PHOTO + FULL EDUCATION BACKGROUND HERE
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("Contact: rutagaramafabrice7@gmail.com  •  +250 781 587 469")
+    with col2:
+        st.image("https://i.ibb.co/TM3psZjw/photo-jpg.jpg", width=180)
+        st.markdown("""
+<div style='text-align: center; margin-top: 0.5rem; line-height: 1.4;'>
+    <b style='color: white; font-size: 1.1rem;'>Fabrice RUTAGARAMA</b><br>
+    <small style='color: #64B5F6;'><i>BSc Irrigation & Drainage</i></small><br>
+    <small style='color: #64B5F6;'><i>MSc Agribusiness (Year 1)</i></small><br>
+    <small style='color: #BBBBBB;'><b>University of Rwanda</b></small><br><br>
+    <small style='color: #90CAF9; font-weight: bold;'>Certified Data Analyst – ALX Africa</small><br>
+    <small style='color: #AAAAAA;'>Agriculture Engineer • Data Analyst • ML Engineer</small>
+</div>
+""", unsafe_allow_html=True)
 
 # ========================= FOOTER =========================
 st.markdown("---")
