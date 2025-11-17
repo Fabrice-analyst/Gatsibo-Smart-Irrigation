@@ -316,13 +316,60 @@ if page == "Dashboard":
         st.plotly_chart(fig, use_container_width=True)
 
 elif page == "7-Day Forecast":
-    st.header("7-Day Detailed Forecast & Diagnostics")
+    st.header("7-Day Detailed Forecast")
+
+    # Prepare clean table
     df = forecast.copy()
-    df["date_str"] = df["date"].dt.strftime("%b %d")
-    df_display = df[["date_str", "temp_max", "rainfall_mm", "et0_mm"]].rename(columns={"date_str":"date"})
-    st.dataframe(df_display.style.format({"temp_max":"{:.1f} °C","rainfall_mm":"{:.1f} mm","et0_mm":"{:.1f} mm"}))
-    st.markdown("### Forecast details (raw)")
-    st.json(forecast.to_dict(orient="records"))
+    df["date"] = df["date"].dt.strftime("%b %d")
+
+    df_display = df[["date", "temp_max", "rainfall_mm", "et0_mm"]]
+    st.subheader("📅 7-Day Weather Summary")
+    st.dataframe(
+        df_display.style.format({
+            "temp_max": "{:.1f} °C",
+            "rainfall_mm": "{:.1f} mm",
+            "et0_mm": "{:.1f} mm"
+        }),
+        use_container_width=True
+    )
+
+    st.markdown("---")
+
+    # 🌧️ Rainfall chart
+    st.subheader("🌧️ Rainfall Forecast (mm)")
+    fig_rain = px.bar(
+        df,
+        x="date",
+        y="rainfall_mm",
+        labels={"rainfall_mm": "Rainfall (mm)", "date": "Date"},
+    )
+    fig_rain.update_layout(showlegend=False)
+    st.plotly_chart(fig_rain, use_container_width=True)
+
+    # 🌡️ Temperature chart
+    st.subheader("🌡️ Maximum Temperature (°C)")
+    fig_temp = px.line(
+        df,
+        x="date",
+        y="temp_max",
+        markers=True,
+        labels={"temp_max": "Max Temp (°C)", "date": "Date"},
+    )
+    fig_temp.update_layout(showlegend=False)
+    st.plotly_chart(fig_temp, use_container_width=True)
+
+    # 💧 ET0 chart
+    st.subheader("💧 FAO-56 Reference Evapotranspiration (ET₀)")
+    fig_et0 = px.line(
+        df,
+        x="date",
+        y="et0_mm",
+        markers=True,
+        labels={"et0_mm": "ET₀ (mm)", "date": "Date"},
+    )
+    fig_et0.update_layout(showlegend=False)
+    st.plotly_chart(fig_et0, use_container_width=True)
+
 
 elif page == "Historical Trends":
     st.header("Historical ET₀ & Rainfall (demo)")
