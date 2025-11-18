@@ -405,16 +405,14 @@ elif page == "About This Tool":
     - **Irrigation Logic**: ETc (ET₀ × Kc) → subtract effective rain → divide by efficiency  
     - **Update frequency**: Daily (cached) — use 'Re-run forecast now' for ad-hoc refresh  
     """)
-    
-    # ADD ONLY PHOTO + FULL EDUCATION BACKGROUND HERE
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown("Contact: rutagaramafabrice7@gmail.com  •  +250 781 587 469")
-    with col2:
+
+    col_left, col_right = st.columns([1, 2])
+    with col_left:
         st.image("https://i.ibb.co/TM3psZjw/photo-jpg.jpg", width=180)
+    with col_right:
         st.markdown("""
-<div style='text-align: center; margin-top: 0.5rem; line-height: 1.4;'>
-    <b style='color: white; font-size: 1.1rem;'>Fabrice RUTAGARAMA</b><br>
+<div style='text-align: left; line-height: 1.5;'>
+    <b style='color: white; font-size: 1.2rem;'>Fabrice RUTAGARAMA</b><br>
     <small style='color: #64B5F6;'><i>BSc Irrigation & Drainage</i></small><br>
     <small style='color: #64B5F6;'><i>MSc Agribusiness (Year 1)</i></small><br>
     <small style='color: #BBBBBB;'><b>University of Rwanda</b></small><br><br>
@@ -422,6 +420,14 @@ elif page == "About This Tool":
     <small style='color: #AAAAAA;'>Agriculture Engineer • Data Analyst • ML Engineer</small>
 </div>
 """, unsafe_allow_html=True)
+
+    st.markdown("### Contact & Feedback")
+    st.info("""
+**Email:** rutagaramafabrice7@gmail.com  
+**Phone:** +250 781 587 469  
+
+Have feedback? Want to collaborate? Reach out!
+""")
 
 # ========================= FOOTER =========================
 st.markdown("---")
