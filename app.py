@@ -354,7 +354,7 @@ elif page == "About This Tool":
     <small style='color: #64B5F6;'><i>BSc Irrigation & Drainage</i></small><br>
     <small style='color: #64B5F6;'><i>MSc Agribusiness (Year 1)</i></small><br>
     <small style='color: #BBBBBB;'><b>University of Rwanda</b></small><br><br>
-    <small style='color: #90CAF9; font-weight: bold;'>Certified Data Analyst – ALX Africa</small><br>
+    <small style='color: #90CAF9; font-weight: bold;'>Certified Data Analyst — ALX Africa</small><br>
     <small style='color: #AAAAAA;'>Agriculture Engineer • Data Analyst • ML Engineer</small>
 </div>
 """, unsafe_allow_html=True)
